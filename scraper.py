@@ -99,25 +99,35 @@ url_prefix = 'http://www.grandsgites.com'
 regions = ['bourgogne', 'champagne-ardenne', 'pays-de-loire', 'centre',
            'picardie', 'haute-normandie', 'basse-normandie']
 region = 'bourgogne' if sys.argv[-1] not in regions else sys.argv[-1]
+print('-> %s' % region)
 input_url = 'grand-gite-%s.htm' % region
 
 # scrape list and details
 page = requests.get(join(url_prefix, input_url))
 tree = html.fromstring(page.content)
 listing = tree.xpath('//div[@class="t_donnees2"]')
-listing[0].xpath('./*')
-results = [scrape_entry(ls) for ls in listing]
+print('-> scraping entries')
+results_all = [scrape_entry(ls) for ls in listing]
+n_results = len(results_all)
 
-# request distances such that only one request is sent
-dest_coords = [r['gps'] for r in results]
-distances, keys = request_distances(dest_coords)
-# append distances
-for d, k in zip(distances, keys):
-    for i, r in enumerate(results):
-        r[k] = d[i]
+# request distances such that only one request of 25 destinations is sent
+print('-> requesting distances')
+final_results = []
+step = 25
+for j in range(0, n_results, step):
+    print('%u/%u' % (j, n_results))
+    results = results_all[j:j+step]
+    dest_coords = [r['gps'] for r in results]
+    distances, keys = request_distances(dest_coords)
+    # append distances
+    for d, k in zip(distances, keys):
+        for i, r in enumerate(results):
+            r[k] = d[i]
+    final_results.extend(results)
 
+print('-> saving results')
 # save in csv format
-df = pd.DataFrame(results)
+df = pd.DataFrame(final_results)
 cols = ['name', 'n_beds', 'distance_text', 'distance_value',
         'duration_in_traffic_text', 'duration_in_traffic_value',
         'duration_text', 'duration_value', 'full_direction', 'gps',
