@@ -27,14 +27,20 @@ def request_distances(dest_coords):
                                    units='metric',
                                    departure_time=orig_time,
                                    )
-
     # extract relevant informations
     # start with full directions
     keys = ['full_direction']
     results = [result['destination_addresses']]
+
     for k in ['distance', 'duration', 'duration_in_traffic']:
         for t in ['text', 'value']:
-            results.append([r[k][t] for r in result['rows'][0]['elements']])
+            res = []
+            for r in result['rows'][0]['elements']:
+                if r['status'] == 'OK':
+                    res.append(r[k][t])
+                else:
+                    res.append('')
+            results.append(res)
             keys.append('%s_%s' % (k, t))
     return results, keys
 
@@ -62,7 +68,10 @@ def scrape_details(url_detail):
     # contact info (phone, mobile, web)
     data = tree.xpath('//div[@id="bloc_resa"]/table/tr/*')
     texts = [d.text for d in data]
-    phone, mobile, external_url = texts[1], texts[3], texts[-1]
+    if len(texts) > 3:
+        phone, mobile, external_url = texts[1], texts[3], texts[-1]
+    else:
+        phone, mobile, external_url = '', '', ''
 
     # price
     data = tree.xpath('//div[@id="tarifs_cont"]/table/tr/*')
@@ -107,7 +116,7 @@ page = requests.get(join(url_prefix, input_url))
 tree = html.fromstring(page.content)
 listing = tree.xpath('//div[@class="t_donnees2"]')
 print('-> scraping %u entries' % len(listing))
-results_all = [scrape_entry(ls) for ls in listing]
+results_all = [scrape_entry(lis) for lis in listing]
 n_results = len(results_all)
 
 # request distances such that only one request of 25 destinations is sent
