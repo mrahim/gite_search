@@ -106,7 +106,7 @@ input_url = 'grand-gite-%s.htm' % region
 page = requests.get(join(url_prefix, input_url))
 tree = html.fromstring(page.content)
 listing = tree.xpath('//div[@class="t_donnees2"]')
-print('-> scraping entries')
+print('-> scraping %u entries' % len(listing))
 results_all = [scrape_entry(ls) for ls in listing]
 n_results = len(results_all)
 
