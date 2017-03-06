@@ -20,4 +20,4 @@ short_list = df[(df.n_beds >= min_beds) & (df.duration_value <= max_duration)]
 short_list = short_list[short_list.n_beds <= max_beds]
 
 
-short_list.to_csv('/tmp/short_list_%s.csv' % region, index=False)
+short_list.to_csv('results/short_list_%s.csv' % region, index=False)
